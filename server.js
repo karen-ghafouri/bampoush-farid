@@ -2,6 +2,8 @@ const https = require('https');
 const http = require('http');
 
 const PORT = process.env.PORT || 3000;
+const USERNAME = '9010085929';
+const PASSWORD = 'BRN32EFC5';
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -26,23 +28,19 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        // تولید کد ۶ رقمی
         const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const bodyId = '1';
 
-        const postData = JSON.stringify({
-          to: to,
-          text: code,
-          bodyId: 1
-        });
+        const path = `/post/Send.asmx/SendByBaseNumber2?username=${USERNAME}&password=${PASSWORD}&text=${code}&to=${to}&bodyId=${bodyId}`;
 
         const options = {
-          hostname: 'console.melipayamak.com',
+          hostname: 'api.payamak-panel.com',
           port: 443,
-          path: '/api/send/shared/03be094aea1f4361b3a47bd942babfa4',
+          path: path,
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(postData)
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Length': 0
           }
         };
 
@@ -50,23 +48,23 @@ const server = http.createServer((req, res) => {
           let result = '';
           apiRes.on('data', d => { result += d; });
           apiRes.on('end', () => {
-            // کد رو به سایت برمیگردونیم تا بتونه تأیید کنه
+            console.log('ملی پیامک response:', result);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ code: code, result: result }));
           });
         });
 
         apiReq.on('error', error => {
+          console.error('خطا:', error);
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: error.message }));
         });
 
-        apiReq.write(postData);
         apiReq.end();
 
       } catch(e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'خطا در پردازش درخواست' }));
+        res.end(JSON.stringify({ error: 'خطا در پردازش' }));
       }
     });
   } else {
