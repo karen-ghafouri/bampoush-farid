@@ -4,7 +4,6 @@ const http = require('http');
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req, res) => {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -27,15 +26,23 @@ const server = http.createServer((req, res) => {
           return;
         }
 
-        const data = JSON.stringify({ to });
+        // تولید کد ۶ رقمی
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const postData = JSON.stringify({
+          to: to,
+          text: code,
+          bodyId: 1
+        });
+
         const options = {
           hostname: 'console.melipayamak.com',
           port: 443,
-          path: '/api/send/otp/03be094aea1f4361b3a47bd942babfa4',
+          path: '/api/send/shared/03be094aea1f4361b3a47bd942babfa4',
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(data)
+            'Content-Length': Buffer.byteLength(postData)
           }
         };
 
@@ -43,8 +50,9 @@ const server = http.createServer((req, res) => {
           let result = '';
           apiRes.on('data', d => { result += d; });
           apiRes.on('end', () => {
+            // کد رو به سایت برمیگردونیم تا بتونه تأیید کنه
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(result);
+            res.end(JSON.stringify({ code: code, result: result }));
           });
         });
 
@@ -53,7 +61,7 @@ const server = http.createServer((req, res) => {
           res.end(JSON.stringify({ error: error.message }));
         });
 
-        apiReq.write(data);
+        apiReq.write(postData);
         apiReq.end();
 
       } catch(e) {
@@ -62,8 +70,8 @@ const server = http.createServer((req, res) => {
       }
     });
   } else {
-    res.writeHead(404);
-    res.end('Not Found');
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'بامپوش فرید OTP سرور آنلاینه!' }));
   }
 });
 
