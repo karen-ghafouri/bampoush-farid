@@ -76,3 +76,10 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log('Server running on port ' + PORT);
 });
+apiReq.on('error', error => {
+  console.log('MELIPAYAMAK ERROR:', error);
+});
+
+apiRes.on('end', () => {
+  console.log('MELIPAYAMAK RESPONSE:', result);
+});
