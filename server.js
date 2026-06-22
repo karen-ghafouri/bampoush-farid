@@ -2,10 +2,9 @@ const https = require('https');
 const http = require('http');
 
 const PORT = process.env.PORT || 3000;
-const USERNAME = '9010085929';
-const PASSWORD = 'BRN32EFC5';
 
 const server = http.createServer((req, res) => {
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -17,69 +16,112 @@ const server = http.createServer((req, res) => {
   }
 
   if (req.method === 'POST' && req.url === '/send-otp') {
+
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+
+    req.on('data', chunk => {
+      body += chunk;
+    });
+
     req.on('end', () => {
+
       try {
+
         const { to } = JSON.parse(body);
+
         if (!to) {
-          res.writeHead(400, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'شماره موبایل الزامی است' }));
-          return;
+          res.writeHead(400, {
+            'Content-Type': 'application/json'
+          });
+
+          return res.end(JSON.stringify({
+            error: 'شماره موبایل الزامی است'
+          }));
         }
 
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const bodyId = '1';
+        console.log('Sending OTP to:', to);
 
-        const path = `/post/Send.asmx/SendByBaseNumber2?username=${USERNAME}&password=${PASSWORD}&text=${code}&to=${to}&bodyId=${bodyId}`;
+        const data = JSON.stringify({
+          to: to
+        });
 
         const options = {
-          hostname: 'api.payamak-panel.com',
+          hostname: 'console.melipayamak.com',
           port: 443,
-          path: path,
+          path: '/api/send/otp/03be094aea1f4361b3a47bd942babfa4',
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Content-Length': 0
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data)
           }
         };
 
         const apiReq = https.request(options, apiRes => {
+
           let result = '';
-          apiRes.on('data', d => { result += d; });
-          apiRes.on('end', () => {
-            console.log('ملی پیامک response:', result);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ code: code, result: result }));
+
+          apiRes.on('data', chunk => {
+            result += chunk;
           });
+
+          apiRes.on('end', () => {
+
+            console.log('Melipayamak Response:', result);
+
+            res.writeHead(200, {
+              'Content-Type': 'application/json'
+            });
+
+            res.end(result);
+          });
+
         });
 
         apiReq.on('error', error => {
-          console.error('خطا:', error);
-          res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: error.message }));
+
+          console.error('Melipayamak Error:', error);
+
+          res.writeHead(500, {
+            'Content-Type': 'application/json'
+          });
+
+          res.end(JSON.stringify({
+            error: error.message
+          }));
+
         });
 
+        apiReq.write(data);
         apiReq.end();
 
-      } catch(e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'خطا در پردازش' }));
+      } catch (e) {
+
+        console.error('Server Error:', e);
+
+        res.writeHead(400, {
+          'Content-Type': 'application/json'
+        });
+
+        res.end(JSON.stringify({
+          error: 'خطا در پردازش درخواست'
+        }));
+
       }
+
     });
+
   } else {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'بامپوش فرید OTP سرور آنلاینه!' }));
+
+    res.writeHead(404, {
+      'Content-Type': 'text/plain'
+    });
+
+    res.end('Not Found');
+
   }
+
 });
 
 server.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
-});
-apiReq.on('error', error => {
-  console.log('MELIPAYAMAK ERROR:', error);
-});
-
-apiRes.on('end', () => {
-  console.log('MELIPAYAMAK RESPONSE:', result);
+  console.log(`Server running on port ${PORT}`);
 });
